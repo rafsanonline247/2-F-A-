@@ -1,8 +1,209 @@
-<!doctype html><html lang="bn"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Lekhok Secure · Preview</title>
-<style>body{margin:0;background:#0b1220;color:#e7eefc;font:16px system-ui}main{max-width:1000px;margin:auto;padding:30px}header{display:flex;align-items:center;justify-content:space-between}h1{font-size:28px}small,.muted{color:#aabbd3}section,article{background:#152237;border:1px solid #2a3d56;border-radius:16px;padding:22px;margin:18px 0}input,select,textarea,button{font:inherit;border-radius:8px;padding:12px;border:1px solid #38506c;background:#101b2c;color:inherit;box-sizing:border-box}input,textarea,select{width:100%;margin:6px 0 14px}button{cursor:pointer;background:#2563b7;margin:4px}button:disabled{opacity:.5}label{display:block}#cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:16px}article{margin:0;overflow-wrap:anywhere}.otp{font:36px monospace;letter-spacing:3px}progress{width:100%}[hidden]{display:none!important}#status{min-height:28px;color:#b8d5ff}a{color:#a8caff}.row{display:flex;flex-wrap:wrap;gap:8px}summary{cursor:pointer}footer{margin:24px 0;color:#aabbd3;font-size:14px}</style>
-<main><header><div><small>LOCAL FIRST / ENCRYPTED</small><h1>Lekhok Secure</h1></div><button id="lock" hidden>Lock now</button></header>
-<p class="muted">পরীক্ষামূলক Authenticator + Password Vault · native biometrics ও Drive sync এখনো যুক্ত নয়।</p><p id="status" role="status" aria-live="polite"></p>
-<section id="gate"><h2 id="gate-title">Open your vault</h2><form id="unlock-form"><label>Master passphrase<input id="passphrase" type="password" autocomplete="current-password" required></label><p>নতুন vault-এর জন্য অন্তত ১৪ অক্ষর। এই passphrase হারালে backup উদ্ধার করা যাবে না।</p><button id="unlock">Create / unlock</button></form><hr><label>Encrypted backup restore<input id="restore-file" type="file" accept=".lekhokvault,application/json"></label><button id="restore">Restore with passphrase</button><p>Restore শুধু খালি browser vault-এ করা যাবে। অন্য ডিভাইসে আগে blank vault তৈরি করবেন না।</p></section>
-<div id="workspace" hidden><div class="row"><button id="export">Encrypted backup</button><button id="add">Add record</button></div><label>Search<input id="search" type="search" placeholder="Service or username"></label><p id="health" class="muted"></p><div id="cards"></div>
-<section id="editor" hidden><h2>New record</h2><form id="record-form"><label>Type<select id="kind"><option value="totp">Authenticator (TOTP)</option><option value="password">Password</option></select></label><label>Service<input id="title" maxlength="200" required></label><label>Username / email<input id="username" maxlength="300"></label><label>TOTP Base32 secret<input id="secret" type="password" autocomplete="off"></label><label>Algorithm<select id="algorithm"><option>SHA-1</option><option>SHA-256</option><option>SHA-512</option></select></label><label>Digits<select id="digits"><option>6</option><option>8</option></select></label><label>Period (seconds)<input id="period" type="number" min="15" max="120" value="30"></label><label>Password<input id="password" type="password" autocomplete="new-password"></label><button id="generate" type="button">Generate 24-character password</button><label>Website<input id="url" maxlength="2000"></label><label>Notes<textarea id="notes"></textarea></label><button>Save encrypted</button><button id="cancel" type="button">Cancel</button></form><hr><label>Provisioning URI (TOTP only)<input id="uri" type="password" autocomplete="off"></label><button id="parse">Fill from URI</button><label>QR image (decoded locally)<input id="qr" type="file" accept="image/*"></label></section></div>
-<footer>Auto-lock: 2 minutes inactivity and immediately on background. Browser storage may be cleared by the OS: keep tested encrypted backups. No cloud login, telemetry, or external time requests. Password + TOTP in one vault increases compromise impact. Clipboard clearing is best effort; JavaScript cannot guarantee memory erasure.</footer></main><script src="js/totp.js"></script><script src="js/jsQR.js"></script><script src="js/vault.js"></script><script src="js/app.js"></script></html>
+<!doctype html><html lang="bn"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Lekhok Secure · Preview</title>
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'unsafe-inline'; img-src 'self' blob: data:; font-src 'self'; connect-src 'none'; base-uri 'none'; form-action 'none'">
+<style>
+@font-face{font-family:'Kalpurush';src:url('fonts/kalpurush.ttf') format('truetype');font-display:swap}
+:root{--bg:#000;--card:#1a2332;--card2:#141c29;--line:#26314400;--blue:#2f7ff0;--blue2:#59a0ff;--txt:#f2f5fb;--mut:#8b95a7;--red:#e5484d}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:var(--bg);color:var(--txt);font:16px/1.45 'Kalpurush',system-ui,sans-serif}
+main,section{max-width:560px;margin:0 auto;padding:0 14px}
+h1{font-size:20px;margin:0;font-weight:600}
+h2{font-size:22px;margin:0 0 10px}
+button,input,select,textarea{font:inherit;color:inherit}
+input,select,textarea{border:1px solid #2c3a52;background:#101a28;border-radius:12px;padding:12px;width:100%;margin:6px 0 12px}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--blue)}
+button{cursor:pointer;border:0;background:none}
+.btn{display:block;width:100%;background:var(--blue);color:#fff;border-radius:14px;padding:14px;text-align:center;font-size:17px;margin:10px 0;font-weight:600}
+.btn.ghost{background:var(--card)}
+.btn:disabled{opacity:.45}
+.muted{color:var(--mut)}
+/* top bar */
+#topbar{display:flex;align-items:center;justify-content:space-between;padding:14px 2px 8px;position:sticky;top:0;background:linear-gradient(#000 78%,transparent);z-index:5}
+.avatar{width:44px;height:44px;border-radius:16px;background:#0d141f;border:1px solid #223048;display:flex;align-items:center;justify-content:center;position:relative}
+.avatar svg{width:22px;height:22px;fill:var(--blue2)}
+.avatar .dot{position:absolute;top:3px;right:3px;width:9px;height:9px;border-radius:50%;background:#22c55e;border:2px solid #0d141f}
+.round{width:40px;height:40px;border-radius:50%;background:#0d141f;border:1px solid #223048;color:var(--blue2);font-size:20px;display:flex;align-items:center;justify-content:center}
+/* search row */
+.searchrow{display:flex;gap:8px;align-items:center;margin:4px 0 14px}
+.searchbox{flex:1;display:flex;align-items:center;gap:8px;background:#101a28;border:1px solid #232f44;border-radius:14px;padding:0 12px}
+.searchbox svg{width:18px;height:18px;stroke:var(--mut);fill:none;stroke-width:2;flex:none}
+.searchbox input{border:0;background:none;margin:0;padding:12px 0}
+.iconbtn{width:44px;height:44px;border-radius:14px;background:#101a28;border:1px solid #232f44;display:flex;align-items:center;justify-content:center;flex:none}
+.iconbtn svg{width:20px;height:20px;stroke:var(--blue2);fill:none;stroke-width:1.8}
+/* cards grid */
+#cards{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding-bottom:120px}
+.rec{position:relative;background:var(--card);border-radius:18px;padding:14px;overflow:hidden;cursor:pointer;border:1px solid #212d42}
+.rec:active{filter:brightness(1.12)}
+.rec h3{margin:0;font-size:17px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rec .user{margin:2px 0 12px;color:var(--mut);font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rec .row{display:flex;align-items:center;justify-content:space-between;gap:6px}
+.logo{width:40px;height:40px;border-radius:12px;background:#0d1626;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:18px;color:var(--blue2);flex:none}
+.otp{font-size:25px;font-weight:700;letter-spacing:2px;font-variant-numeric:tabular-nums}
+.bar{position:absolute;left:14px;right:14px;bottom:0;height:3px;border-radius:3px;overflow:hidden;opacity:.9}
+.bar::-moz-progress-bar{background:var(--blue)}
+.bar::-webkit-progress-bar{background:#223048}
+.bar::-webkit-progress-value{background:var(--blue)}
+.del{position:absolute;top:6px;right:6px;width:26px;height:26px;border-radius:50%;color:#55617a;font-size:15px;line-height:1}
+.del:hover{color:var(--red)}
+.empty{grid-column:1/-1;text-align:center;color:var(--mut);padding:36px 12px;background:var(--card);border-radius:18px}
+/* settings */
+.banner{background:linear-gradient(100deg,#24344e,#141d2c);border-radius:18px;padding:18px;margin:6px 0 16px}
+.banner b{font-size:20px}
+.sec{color:#7e89a0;font-size:13px;letter-spacing:1.5px;margin:18px 0 8px;text-transform:uppercase}
+.panel{background:var(--card);border-radius:18px;padding:4px 16px;margin-bottom:14px}
+.srow{display:flex;align-items:center;gap:12px;padding:14px 0;border-bottom:1px solid #212d42}
+.panel .srow:last-child{border-bottom:0}
+.srow svg{width:22px;height:22px;stroke:var(--blue2);fill:none;stroke-width:1.8;flex:none}
+.srow .lbl{flex:1}
+.srow .val{color:var(--mut)}
+.srow .chev{color:#5a6780}
+.stats{display:flex;text-align:center;padding:16px 0}
+.stats>div{flex:1}
+.stats b{display:block;font-size:22px}
+.stats span{color:var(--mut);font-size:13px}
+.toggle{width:44px;height:24px;border-radius:12px;background:#223048;position:relative;flex:none}
+.toggle i{position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#66718a}
+.toggle.off{opacity:.7}
+/* add screen */
+.abtn{display:flex;align-items:center;gap:14px;width:100%;background:var(--card);border-radius:16px;padding:16px;margin:10px 0;font-size:17px;font-weight:600}
+.abtn svg{width:22px;height:22px;stroke:var(--blue2);fill:none;stroke-width:1.8}
+.abtn.primary{background:var(--blue);justify-content:center;color:#fff}
+.abtn.primary svg{stroke:#fff}
+/* screens */
+.screen{display:none;padding-bottom:140px}
+.screen.on{display:block}
+.sub{display:flex;align-items:center;gap:10px;padding:14px 0 6px}
+.fab{position:fixed;right:22px;bottom:calc(96px + env(safe-area-inset-bottom));width:60px;height:60px;border-radius:50%;background:var(--blue);color:#fff;font-size:30px;box-shadow:0 6px 18px #2f7ff055;z-index:6}
+.fab:active{transform:scale(.94)}
+/* tab bar */
+#tabbar{position:fixed;left:0;right:0;bottom:0;background:#0b111c;border-top:1px solid #1b2536;display:flex;justify-content:space-around;padding:10px 0 calc(10px + env(safe-area-inset-bottom));z-index:7}
+#tabbar button{width:72px;display:flex;flex-direction:column;align-items:center;gap:3px;color:#66718a;font-size:11px}
+#tabbar button svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:1.8}
+#tabbar button.on{color:var(--blue2)}
+/* status toast */
+#status{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom));background:#172234;border:1px solid #26324a;color:#cfe0ff;padding:10px 16px;border-radius:14px;max-width:88%;text-align:center;z-index:9;min-height:20px;font-size:14.5px}
+[hidden]{display:none!important}
+a{color:#a8caff}
+hr{border:0;border-top:1px solid #212d42;margin:16px 0}
+.gate{max-width:420px;margin:0 auto;padding:48px 18px}
+.gate .mark{width:84px;height:84px;border-radius:26px;background:linear-gradient(140deg,#2f7ff0,#1b4fa8);display:flex;align-items:center;justify-content:center;margin:0 auto 18px}
+.gate .mark svg{width:44px;height:44px;fill:#fff}
+</style>
+<main id="gate">
+ <div class="gate">
+  <div class="mark"><svg viewBox="0 0 24 24"><path d="M12 1 4 4v6c0 5.25 3.4 10.74 8 12 4.6-1.26 8-6.75 8-12V4l-8-3zm0 10.99h6c-.53 4.12-3.28 7.79-6 8.84V12H6V5.3l6-2.25v8.94z"/></svg></div>
+  <h2 style="text-align:center">Lekhok Secure</h2>
+  <p class="muted" style="text-align:center;margin-top:0">লোকাল-ফার্স্ট · এনক্রিপ্টেড · পরীক্ষামূলক Preview</p>
+  <form id="unlock-form"><label>মাস্টার পাসফ্রেজ / Master passphrase<input id="passphrase" type="password" autocomplete="current-password" required></label>
+  <p class="muted">নতুন vault-এর জন্য অন্তত ১৪ অক্ষর। পাসফ্রেজ হারালে ডেটা উদ্ধার করা যাবে না।</p>
+  <button id="unlock" class="btn">Vault খুলুন / Create or unlock</button></form>
+  <div class="panel" style="margin-top:18px"><div class="srow"><span class="lbl">এনক্রিপ্টেড ব্যাকআপ রিস্টোর<br><span class="muted" style="font-size:13px">Restore encrypted backup (.lekhokvault)</span></span></div>
+  <input id="restore-file" type="file" accept=".lekhokvault,application/json" style="border-style:dashed">
+  <button id="restore" class="btn ghost">পাসফ্রেজ দিয়ে রিস্টোর / Restore</button>
+  <p class="muted" style="font-size:13px">রিস্টোর শুধু খালি vault-এ করা যাবে। আগে blank vault তৈরি করবেন না।</p></div>
+  <p class="muted" style="font-size:12.5px;margin-top:16px">অটো-লক: ২ মিনিট নিষ্ক্রিয়তা ও ব্যাকগ্রাউন্ডে গেলে সাথে সাথে। কোনো ক্লাউড লগইন, টেলিমেট্রি বা ইন্টারনেট রিকোয়েস্ট নেই। ব্রাউজার স্টোরেজ OS মুছে দিতে পারে — পরীক্ষিত এনক্রিপ্টেড ব্যাকআপ রাখুন।</p>
+ </div>
+</main>
+<div id="workspace" hidden>
+ <header id="topbar">
+  <div class="avatar"><svg viewBox="0 0 24 24"><path d="M12 1 4 4v6c0 5.25 3.4 10.74 8 12 4.6-1.26 8-6.75 8-12V4l-8-3z"/></svg><span class="dot"></span></div>
+  <h1 id="view-title">2FA Codes</h1>
+  <button class="round" id="help-btn" aria-label="Help">?</button>
+ </header>
+
+ <section id="screen-codes" class="screen on">
+  <div class="searchrow">
+   <div class="searchbox"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg><input id="search" type="search" placeholder="Search" aria-label="Search"></div>
+   <button class="iconbtn" id="import-uri" aria-label="URI দিয়ে যোগ করুন" title="URI দিয়ে যোগ করুন"><svg viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M12 11v6m-3-3h6"/></svg></button>
+   <button class="iconbtn" id="sort-btn" aria-label="সাজান" title="A–Z সাজান"><svg viewBox="0 0 24 24"><path d="M4 6h13M4 12h9M4 18h5"/><path d="m17 13 3 3 3-3M20 16V5"/></svg></button>
+  </div>
+  <div id="cards"></div>
+ </section>
+
+ <section id="screen-passwords" class="screen">
+  <div class="searchrow">
+   <div class="searchbox"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg><input id="search-pw" type="search" placeholder="Search" aria-label="Search"></div>
+   <button class="iconbtn" id="add-pw" aria-label="নতুন রেকর্ড" title="নতুন রেকর্ড"><svg viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M12 11v6m-3-3h6"/></svg></button>
+   <span class="iconbtn" style="visibility:hidden"></span>
+  </div>
+  <div id="cards-pw"></div>
+ </section>
+
+ <section id="screen-settings" class="screen">
+  <div class="banner"><b>Lekhok Secure</b><div class="muted" style="font-size:14px">Local-first encrypted vault · কোনো ইন্টারনেট রিকোয়েস্ট নেই</div></div>
+  <div class="sec">Data Storage</div>
+  <div class="panel">
+   <div class="stats"><div><b id="stat-totp">0</b><span>2FA Codes</span></div><div><b id="stat-pw">0</b><span>Passwords</span></div><div><b id="stat-total">0</b><span>Records</span></div></div>
+   <button class="srow" id="row-sync" style="width:100%"><svg viewBox="0 0 24 24"><path d="M7 18a4.5 4.5 0 1 1 .9-8.9A6 6 0 0 1 19 10a4 4 0 0 1-1 7.9z"/></svg><span class="lbl">Sync &amp; Backup</span><span class="val" id="sync-state">Not connected</span><span class="chev">›</span></button>
+   <button class="srow" id="row-backup" style="width:100%"><svg viewBox="0 0 24 24"><path d="M12 16V4m-5 5 5-5 5 5"/><path d="M4 20h16"/></svg><span class="lbl">Export &amp; Import</span><span class="chev">›</span></button>
+  </div>
+  <div class="sec">App Safety</div>
+  <div class="panel">
+   <div class="srow"><svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg><span class="lbl">Auto Lock</span><span class="val">২ মিনিট + background</span></div>
+   <button class="srow" id="lock" style="width:100%"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg><span class="lbl">Lock now</span><span class="chev">›</span></button>
+  </div>
+  <div class="sec">2FA Settings</div>
+  <div class="panel">
+   <div class="srow"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg><span class="lbl">Time source</span><span class="val">Device clock (no internet)</span></div>
+   <div class="srow"><svg viewBox="0 0 24 24"><path d="M4 7V5h16v2M9 20h6M12 5v15"/></svg><span class="lbl">Algorithm support</span><span class="val">SHA-1/256/512 · 6/8 digit</span></div>
+  </div>
+  <div class="sec">System</div>
+  <div class="panel">
+   <div class="srow"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18"/></svg><span class="lbl">Language</span><span class="val">বাংলা + English</span><span class="chev">›</span></div>
+   <button class="srow" id="row-help" style="width:100%"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.4 2.3c-.8.3-.9 1-.9 1.7m0 3h.01"/></svg><span class="lbl">Help / FAQ</span><span class="chev">›</span></button>
+   <div class="srow"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v5h1"/></svg><span class="lbl">Version</span><span class="val">0.4.0-preview</span></div>
+  </div>
+ </section>
+
+ <section id="screen-add" class="screen">
+  <div class="sub"><button class="round" id="back-add" aria-label="Back">‹</button><h1>অ্যাকাউন্ট যোগ করুন</h1></div>
+  <button class="abtn primary" id="btn-scan"><svg viewBox="0 0 24 24"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/><path d="M7 8v8M11 8v8M15 8v8"/></svg>স্ক্রিনশট / ছবি থেকে QR স্ক্যান</button>
+  <input id="qr" type="file" accept="image/*" hidden>
+  <button class="abtn" id="btn-uri"><svg viewBox="0 0 24 24"><path d="M10 14a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1.5 1.5M14 10a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7L12.5 19"/></svg>Provisioning URI দিয়ে যোগ</button>
+  <div id="uri-box" hidden><label>otpauth:// URI<input id="uri" type="password" autocomplete="off"></label><button id="parse" class="btn ghost">URI থেকে পূরণ করুন</button></div>
+  <button class="abtn" id="btn-manual"><svg viewBox="0 0 24 24"><path d="M4 20h16M6 16 17.5 4.5a2.1 2.1 0 0 1 3 3L9 19l-4 1z"/></svg>ম্যানুয়াল ইনপুট / Manually Input</button>
+  <section id="editor" hidden><h2>নতুন রেকর্ড</h2>
+  <form id="record-form"><label>ধরন<select id="kind"><option value="totp">Authenticator (TOTP)</option><option value="password">Password</option></select></label>
+  <label>Service<input id="title" maxlength="200" required></label>
+  <label>Username / email<input id="username" maxlength="300"></label>
+  <label>TOTP Base32 secret<input id="secret" type="password" autocomplete="off"></label>
+  <label>Algorithm<select id="algorithm"><option>SHA-1</option><option>SHA-256</option><option>SHA-512</option></select></label>
+  <label>Digits<select id="digits"><option>6</option><option>8</option></select></label>
+  <label>Period (seconds)<input id="period" type="number" min="15" max="120" value="30"></label>
+  <label>Password<input id="password" type="password" autocomplete="new-password"></label>
+  <button id="generate" type="button" class="btn ghost">২৪-অক্ষরের শক্তিশালী পাসওয়ার্ড তৈরি করুন</button>
+  <label>Website<input id="url" maxlength="2000"></label>
+  <label>Notes<textarea id="notes"></textarea></label>
+  <button class="btn">এনক্রিপ্ট করে সেভ করুন</button>
+  <button id="cancel" type="button" class="btn ghost">বাতিল</button></form></section>
+ </section>
+
+ <section id="screen-sync" class="screen">
+  <div class="sub"><button class="round" id="back-sync" aria-label="Back">‹</button><h1>Sync &amp; Backup</h1></div>
+  <div class="panel"><div class="srow"><svg viewBox="0 0 24 24"><path d="M7 18a4.5 4.5 0 1 1 .9-8.9A6 6 0 0 1 19 10a4 4 0 0 1-1 7.9z"/></svg><span class="lbl">Google Drive sync</span><span class="val">Not connected</span></div></div>
+  <p class="muted">Google Drive sync এখনো বাস্তবায়িত হয়নি — এটিই সৎ অবস্থা। পরিকল্পনা অনুযায়ী এটি client-side এনক্রিপশন ও ন্যূনতম OAuth scope নিয়ে পরে যোগ হবে (docs/ROADMAP.md — P6)। যাচাই ছাড়া ভুয়া "Synchronized" দেখানো হয় না।</p>
+  <p>এই মুহূর্তে নিরাপদ বিকল্প: <b>এনক্রিপ্টেড ব্যাকআপ ফাইল</b> (AES-256-GCM, PBKDF2-600k) নিজে সংরক্ষণ করুন এবং প্রয়োজনে নতুন ডিভাইসে রিস্টোর করুন।</p>
+  <button id="export" class="btn">এনক্রিপ্টেড ব্যাকআপ ডাউনলোড (.lekhokvault)</button>
+  <p class="muted" style="font-size:13px">ব্যাকআপ আলাদা প্রোফাইলে রিস্টোর করে পরীক্ষা করুন। রিস্টোর শুধু খালি vault-এ কাজ করে (গেট স্ক্রিনে)। পুরনো ব্যাকআপে মোছা রেকর্ডও থাকে — প্রয়োজনে নতুন ব্যাকআপ নিন।</p>
+ </section>
+
+ <section id="screen-help" class="screen">
+  <div class="sub"><button class="round" id="back-help" aria-label="Back">‹</button><h1>সাহায্য / FAQ</h1></div>
+  <h2 style="margin-top:14px">2FA সেটআপের সাধারণ নির্দেশনা</h2>
+  <p>👉 <b>১. QR কোড নিন:</b> যে সার্ভিসে 2FA চালু করবেন সেখানে লগইন করে Security settings-এ "Authenticator App" অপশনটি চালু করুন।</p>
+  <p>👉 <b>২. অ্যাপে যোগ করুন:</b> অ্যাড স্ক্রিন থেকে "স্ক্রিনশট থেকে QR স্ক্যান" (QR-এর ছবি বাছুন), "Provisioning URI", বা "ম্যানুয়াল ইনপুট" — যেকোনো একটি দিয়ে সিক্রেট যোগ করুন। কোড প্রতি ৩০ সেকেন্ডে নিজে নিজে রিফ্রেশ হয়।</p>
+  <p>👉 <b>৩. ব্যাকআপ নিন:</b> Settings → Export &amp; Import থেকে এনক্রিপ্টেড ব্যাকআপ নামিয়ে নিরাপদে রাখুন। কোনো সার্ভিসে সাইন-ইন করার সময় কোডের পাশে Copy চাপুন।</p>
+  <hr>
+  <p class="muted">⚠️ মাস্টার পাসফ্রেজ হারালে ডেটা পুনরুদ্ধার **অসম্ভব** — কোনো recovery key বা ক্লাউড নেই। পাসফ্রেজ অন্তত ১৪ অক্ষরের, ইউনিক রাখুন।</p>
+  <p class="muted">⚠️ এটি পরীক্ষামূলক preview: ক্যামেরা স্ক্যান, বায়োমেট্রিক লক, ড্রাইভ সিঙ্ক এখনো নেই। শুধু নিজের/কাল্পনিক টেস্ট অ্যাকাউন্ট ব্যবহার করুন, যতক্ষণ না স্বাধীন নিরাপত্তা পর্যালোচনা হয়।</p>
+ </section>
+
+ <button class="fab" id="fab" aria-label="Add">+</button>
+
+ <nav id="tabbar">
+  <button id="tab-codes" class="on"><svg viewBox="0 0 24 24"><circle cx="8" cy="15" r="4"/><path d="M11 12 21 2m-5 5 3 3m-1-6 2 2"/></svg><span>2FA Codes</span></button>
+  <button id="tab-passwords"><svg viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/><path d="M8 15h.01M12 15h.01M16 15h.01"/></svg><span>Passwords</span></button>
+  <button id="tab-settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1 1.55V21a2 2 0 1 1-4 0v-.09a1.7 1.7 0 0 0-1-1.55 1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.7 1.7 0 0 0 .34-1.87 1.7 1.7 0 0 0-1.55-1H3a2 2 0 1 1 0-4h.09a1.7 1.7 0 0 0 1.55-1 1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.7 1.7 0 0 0 1.87.34h.01a1.7 1.7 0 0 0 1-1.55V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1 1.55 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.34 1.87v.01a1.7 1.7 0 0 0 1.55 1H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.55 1z"/></svg><span>Settings</span></button>
+ </nav>
+</div>
+<p id="status" role="status" aria-live="polite" hidden></p>
+<script src="js/totp.js"></script><script src="js/jsQR.js"></script><script src="js/vault.js"></script><script src="js/app.js"></script></html>
