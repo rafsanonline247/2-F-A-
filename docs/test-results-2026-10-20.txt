@@ -1,0 +1,40 @@
+
+> lekhok-secure-preview@0.3.0 test
+> node --test tests/security.test.js
+
+✔ RFC 4226 all ten HOTP vectors use actual app engine (7.867785ms)
+✔ RFC 6238 appendix B: 18 SHA1/256/512 vectors (5.317117ms)
+✔ encryption roundtrip, wrong password and tampering rejection (336.049328ms)
+✔ fresh random IV per write; no plaintext record in envelope (82.372591ms)
+✔ schema and password length constraints (0.637424ms)
+✔ backend rejects malformed codes rather than throwing (1.23029ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 6
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 490.854499
+
+> lekhok-secure-preview@0.3.0 test
+> node --test tests/security.test.js
+
+✔ RFC 4226 all ten HOTP vectors use actual app engine (9.37755ms)
+✔ RFC 6238 appendix B: 18 SHA1/256/512 vectors (4.608821ms)
+✔ encryption roundtrip, wrong password and tampering rejection (325.209407ms)
+✔ fresh random IV per write; no plaintext record in envelope (80.984725ms)
+✔ schema and password length constraints (0.503373ms)
+✔ backend rejects malformed codes rather than throwing (0.951217ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 6
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 490.897851
+
+# Post-documentation re-run (2026-10-20, same session):
+#   node --check on all 7 JS files: OK
+#   npm test (node --test tests/security.test.js): 6/6 pass, 0 fail
