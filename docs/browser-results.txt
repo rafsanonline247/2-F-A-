@@ -1,0 +1,2 @@
+PASS: create, manual TOTP save, live code, encrypted localStorage, encrypted download, lock, wrong password, unlock, reload locked, restore into separate browser context, mobile no horizontal overflow.
+No pageerror events on primary page. Synthetic records only. Camera, QR image, clipboard, 120s idle, native OS and Drive NOT tested.
