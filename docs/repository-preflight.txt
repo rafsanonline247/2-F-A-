@@ -1,0 +1,40 @@
+TAP version 13
+# Subtest: RFC 4226 all ten HOTP vectors use actual app engine
+ok 1 - RFC 4226 all ten HOTP vectors use actual app engine
+  ---
+  duration_ms: 11.599439
+  ...
+# Subtest: RFC 6238 appendix B: 18 SHA1/256/512 vectors
+ok 2 - RFC 6238 appendix B: 18 SHA1/256/512 vectors
+  ---
+  duration_ms: 6.559108
+  ...
+# Subtest: encryption roundtrip, wrong password and tampering rejection
+ok 3 - encryption roundtrip, wrong password and tampering rejection
+  ---
+  duration_ms: 661.183802
+  ...
+# Subtest: fresh random IV per write; no plaintext record in envelope
+ok 4 - fresh random IV per write; no plaintext record in envelope
+  ---
+  duration_ms: 152.502605
+  ...
+# Subtest: schema and password length constraints
+ok 5 - schema and password length constraints
+  ---
+  duration_ms: 0.55984
+  ...
+# Subtest: backend rejects malformed codes rather than throwing
+ok 6 - backend rejects malformed codes rather than throwing
+  ---
+  duration_ms: 0.973022
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 895.04033
