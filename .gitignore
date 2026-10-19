@@ -1,0 +1,14 @@
+node_modules/
+.env
+.env.*
+!.env.example
+*.jks
+*.keystore
+*.pfx
+*.p12
+*.pem
+*.key
+*.lekhokvault
+coverage/
+playwright-report/
+test-results/
