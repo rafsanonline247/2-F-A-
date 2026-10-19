@@ -1,9 +1,10 @@
-# Lekhok Secure 0.3.0 — local web security prototype
+# Lekhok Secure 0.4.0-preview — local web security prototype
 
 **Not a production release, native app, or complete implementation of the requested roadmap.**
+UI finalized to the approved screenshots with the Kalpurush font (bundled unmodified from okkhor52; free to use, designer copyright retained). See docs/releases/0.4.0-PREVIEW.md.
 
 ## Run
-Install Node.js 20 or later, extract this package, then run:
+Install Node.js 22 or later (matches `package.json` `engines`), extract this package, then run:
 
 ```sh
 node server.js
