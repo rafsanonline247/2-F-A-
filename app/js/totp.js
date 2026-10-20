@@ -195,65 +195,6 @@ const LekhokTOTP = (function () {
         return code;
     }
 
-    // AES-GCM-256 Vault Encryption for local storage & backup export
-    async function deriveKey(password, salt) {
-        const enc = new TextEncoder();
-        const baseKey = await window.crypto.subtle.importKey(
-            'raw',
-            enc.encode(password),
-            'PBKDF2',
-            false,
-            ['deriveKey']
-        );
-        return await window.crypto.subtle.deriveKey(
-            {
-                name: 'PBKDF2',
-                salt: salt,
-                iterations: 100000,
-                hash: 'SHA-256'
-            },
-            baseKey,
-            { name: 'AES-GCM', length: 256 },
-            false,
-            ['encrypt', 'decrypt']
-        );
-    }
-
-    async function encryptData(plainText, password) {
-        const salt = window.crypto.getRandomValues(new Uint8Array(16));
-        const iv = window.crypto.getRandomValues(new Uint8Array(12));
-        const key = await deriveKey(password, salt);
-        const encoded = new TextEncoder().encode(plainText);
-
-        const cipherBuffer = await window.crypto.subtle.encrypt(
-            { name: 'AES-GCM', iv: iv },
-            key,
-            encoded
-        );
-
-        return {
-            cipherText: btoa(String.fromCharCode(...new Uint8Array(cipherBuffer))),
-            salt: btoa(String.fromCharCode(...salt)),
-            iv: btoa(String.fromCharCode(...iv)),
-            version: 1
-        };
-    }
-
-    async function decryptData(encryptedObj, password) {
-        const salt = new Uint8Array(atob(encryptedObj.salt).split('').map(c => c.charCodeAt(0)));
-        const iv = new Uint8Array(atob(encryptedObj.iv).split('').map(c => c.charCodeAt(0)));
-        const cipherBytes = new Uint8Array(atob(encryptedObj.cipherText).split('').map(c => c.charCodeAt(0)));
-
-        const key = await deriveKey(password, salt);
-        const decryptedBuffer = await window.crypto.subtle.decrypt(
-            { name: 'AES-GCM', iv: iv },
-            key,
-            cipherBytes
-        );
-
-        return new TextDecoder().decode(decryptedBuffer);
-    }
-
     return {
         base32ToBytes,
         bytesToBase32,
@@ -262,8 +203,6 @@ const LekhokTOTP = (function () {
         generateTOTP,
         parseOtpAuthUri,
         generateOtpAuthUri,
-        formatCode,
-        encryptData,
-        decryptData
+        formatCode
     };
 })();
