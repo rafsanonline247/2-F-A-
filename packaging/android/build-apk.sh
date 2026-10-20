@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Reproducible APK build for Lekhok Secure Preview (offline WebView shell).
+# LEGACY local-sandbox script (absolute paths). Use build-apk-ci.sh / release.yml instead.
 # Usage: bash /home/z/work/2fa/build-apk.sh
 set -euo pipefail
 

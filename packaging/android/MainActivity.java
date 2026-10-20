@@ -42,6 +42,9 @@ public class MainActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        // Block screenshots, screen recording and the recent-apps thumbnail (TOTP codes are secrets).
+        getWindow().setFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE,
+                android.view.WindowManager.LayoutParams.FLAG_SECURE);
         getWindow().getDecorView().setBackgroundColor(Color.BLACK);
 
         webView = new WebView(this);

@@ -1,0 +1,60 @@
+name: Preview build (APK + Windows) 
+on:
+  workflow_dispatch:
+  push:
+    tags: ['v*']
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with: { node-version: 22 }
+      - run: npm test
+  android:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: 17 }
+      - name: Ensure Android SDK 34
+        run: |
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null || true
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-34" "build-tools;34.0.0" >/dev/null
+      - name: Build APK
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_B64 }}
+          KS_PASS: ${{ secrets.ANDROID_KEYSTORE_PASS }}
+        run: |
+          if [ -n "$KEYSTORE_B64" ]; then echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/release.jks"; export KEYSTORE_FILE="$RUNNER_TEMP/release.jks"; fi
+          bash packaging/android/build-apk-ci.sh
+      - uses: actions/upload-artifact@v4
+        with: { name: android-apk, path: "build/*.apk*" }
+  windows:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with: { node-version: 22 }
+      - name: Build Neutralino bundle
+        run: |
+          VER=$(node -p "require('./package.json').version")
+          npm i -g @neutralinojs/neu
+          neu create build-tmp && cd build-tmp
+          node -e "
+          const f='neutralino.config.json',c=JSON.parse(require('fs').readFileSync(f));
+          Object.assign(c,{documentRoot:'/app/',version:'$VER',applicationName:'LekhokSecure-Preview',enableNativeAPI:false,nativeAllowList:[]});
+          c.cli=Object.assign(c.cli||{},{resourcesPath:'/app/',binaryName:'LekhokSecure-Preview',binaryVersion:'6.10.0'});
+          if(c.modes&&c.modes.window)c.modes.window.title='Lekhok Secure Preview';
+          require('fs').writeFileSync(f,JSON.stringify(c,null,2))"
+          rm -rf resources && mkdir app && cp -r ../app/. app/
+          neu update && neu build
+          mkdir -p ../out && cp dist/LekhokSecure-Preview/LekhokSecure-Preview-win_x64.exe ../out/LekhokSecure-Preview.exe
+          cp dist/LekhokSecure-Preview/resources.neu ../out/ && cp ../THIRD_PARTY_NOTICES.md ../out/ && cp -r ../licenses ../out/
+          cd ../out && sha256sum LekhokSecure-Preview.exe resources.neu > SHA256SUMS.txt && cat SHA256SUMS.txt
+      - uses: actions/upload-artifact@v4
+        with: { name: windows-x64, path: out/ }
