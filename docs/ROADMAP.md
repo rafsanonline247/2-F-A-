@@ -72,7 +72,7 @@
 
 ## Release blockers (carried from README / AUDIT-BN / baseline)
 
-1. jsQR license/provenance (P2.5) — unresolved.
+1. jsQR license/provenance (P2.5) — **CLOSED in 0.6.0**: byte-identical to npm `jsqr@1.4.0` (Apache-2.0), notice + license text added.
 2. Ownership/license of "supplied project" code (BASELINE §6) — unresolved; do not publish bundles derived from it until cleared.
 3. No CI-green repair commit yet (P0 gate) — pending Actions runs.
 4. Zero device, Drive, signing, or external-review evidence exists — all such claims are prohibited until each gate above closes.

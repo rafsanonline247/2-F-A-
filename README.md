@@ -1,4 +1,4 @@
-# Lekhok Secure 0.4.0-preview — local web security prototype
+# Lekhok Secure 0.6.0-preview — local web security prototype
 
 **Not a production release, native app, or complete implementation of the requested roadmap.**
 UI finalized to the approved screenshots with the Kalpurush font (bundled unmodified from okkhor52; free to use, designer copyright retained). See docs/releases/0.4.0-PREVIEW.md.
@@ -33,11 +33,11 @@ A forgotten passphrase cannot be reset to recover data. Browser storage deletion
 PBKDF2 is a deliberate browser-prototype choice, **not Argon2id or OS-backed key storage**. Device biometrics, Android Keystore and Windows CNG are not implemented. The browser can retain memory copies; non-extractable keys do not defeat XSS or malware.
 
 ## Tests
-`npm test` — six suites including all 28 published HOTP/TOTP vectors; results in docs/test-results.txt.
+`npm test` — 13 tests including all 28 published HOTP/TOTP vectors, URI parsing, forum verifyCode success path, password-generator smoke test and server header checks; results in docs/test-results.txt.
 Browser test: install Playwright and Chromium in a separate test environment. `tests/browser-check.cjs` is the exact executed script, with paths pointing to this session's evidence directory; adjust paths to rerun elsewhere. Browser evidence uses only synthetic accounts.
 
 ## Forum kit
 `forum.js` is a patched copy of the supplied Node helper. Malformed OTP inputs now reject rather than crash. It is **not a login system**: callers must implement authenticated enrollment, server-side secret lookup, encryption at rest, rate limits, transactional last-used-counter replay prevention, single-use hashed recovery codes, CSRF protection, session rotation and audit redaction. Do not accept a client-supplied secret as proof of login. PHP kit was inspected but is not bundled as verified production code.
 
 ## Distribution / licenses
-Original personal screenshots, profile photo, copied branded art, `.env`, Git history and database are not included. `jsQR.js` is inherited third-party code from the supplied archive; distribution requires verifying upstream license and retaining its notices. Core TOTP logic is adapted from the supplied project. Ownership/license of supplied project code has not been independently established. Do not publish this bundle until provenance and license obligations are verified.
+Original personal screenshots, profile photo, copied branded art, `.env`, Git history and database are not included. `app/js/jsQR.js` is byte-identical to `jsqr@1.4.0` (Apache-2.0); see `THIRD_PARTY_NOTICES.md` and `licenses/`. Ownership/license of supplied project code has not been independently established. Do not publish this bundle until provenance and license obligations are verified.
