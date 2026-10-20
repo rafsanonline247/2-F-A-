@@ -1,3 +1,4 @@
+# Historical snapshot (pre-0.6.0); see docs/test-results.txt and docs/releases/0.6.0-PREVIEW.md
 TAP version 13
 # Subtest: RFC 4226 all ten HOTP vectors use actual app engine
 ok 1 - RFC 4226 all ten HOTP vectors use actual app engine

@@ -1,3 +1,4 @@
+# superseded by docs/test-results.txt (regenerated for 0.6.0-preview)
 
 > lekhok-secure-preview@0.3.0 test
 > node --test tests/security.test.js

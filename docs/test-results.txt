@@ -1,44 +1,93 @@
+# regenerated for 0.6.0-preview on 2026-10-20
 
-> lekhok-secure-preview@0.3.0 test
-> node --test tests/*.test.js
+> lekhok-secure-preview@0.6.0 test
+> node --test tests/security.test.js
 
 TAP version 13
 # Subtest: RFC 4226 all ten HOTP vectors use actual app engine
 ok 1 - RFC 4226 all ten HOTP vectors use actual app engine
   ---
-  duration_ms: 15.852555
+  duration_ms: 12.661543
+  type: 'test'
   ...
 # Subtest: RFC 6238 appendix B: 18 SHA1/256/512 vectors
 ok 2 - RFC 6238 appendix B: 18 SHA1/256/512 vectors
   ---
-  duration_ms: 7.275396
+  duration_ms: 5.976364
+  type: 'test'
   ...
 # Subtest: encryption roundtrip, wrong password and tampering rejection
 ok 3 - encryption roundtrip, wrong password and tampering rejection
   ---
-  duration_ms: 657.12736
+  duration_ms: 439.955238
+  type: 'test'
   ...
 # Subtest: fresh random IV per write; no plaintext record in envelope
 ok 4 - fresh random IV per write; no plaintext record in envelope
   ---
-  duration_ms: 171.216204
+  duration_ms: 107.599568
+  type: 'test'
   ...
 # Subtest: schema and password length constraints
 ok 5 - schema and password length constraints
   ---
-  duration_ms: 0.500088
+  duration_ms: 0.684847
+  type: 'test'
   ...
 # Subtest: backend rejects malformed codes rather than throwing
 ok 6 - backend rejects malformed codes rather than throwing
   ---
-  duration_ms: 1.093482
+  duration_ms: 0.95431
+  type: 'test'
   ...
-1..6
-# tests 6
+# Subtest: parseOtpAuthUri: valid URI, defaults and invalid inputs
+ok 7 - parseOtpAuthUri: valid URI, defaults and invalid inputs
+  ---
+  duration_ms: 0.747331
+  type: 'test'
+  ...
+# Subtest: generateOtpAuthUri round-trips through parseOtpAuthUri
+ok 8 - generateOtpAuthUri round-trips through parseOtpAuthUri
+  ---
+  duration_ms: 0.270717
+  type: 'test'
+  ...
+# Subtest: forum.verifyCode accepts the correct current code and rejects a wrong one (RFC 6238 SHA-1 vector)
+ok 9 - forum.verifyCode accepts the correct current code and rejects a wrong one (RFC 6238 SHA-1 vector)
+  ---
+  duration_ms: 1.182799
+  type: 'test'
+  ...
+# Subtest: formatCode groups 6 and 8 digit codes
+ok 10 - formatCode groups 6 and 8 digit codes
+  ---
+  duration_ms: 0.616438
+  type: 'test'
+  ...
+# Subtest: password generator: length, alphabet and no obvious bias
+ok 11 - password generator: length, alphabet and no obvious bias
+  ---
+  duration_ms: 3.350141
+  type: 'test'
+  ...
+# Subtest: legacy v1 crypto path is gone from the app engine
+ok 12 - legacy v1 crypto path is gone from the app engine
+  ---
+  duration_ms: 0.108456
+  type: 'test'
+  ...
+# Subtest: local server sends hardened headers and blocks path traversal
+ok 13 - local server sends hardened headers and blocks path traversal
+  ---
+  duration_ms: 270.691671
+  type: 'test'
+  ...
+1..13
+# tests 13
 # suites 0
-# pass 6
+# pass 13
 # fail 0
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 913.645012
+# duration_ms 971.399148
